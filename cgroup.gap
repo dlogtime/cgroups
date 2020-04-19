@@ -2,9 +2,20 @@
 ##################################################################################################################################
 ##
 ## Code, accompanying the paper "Generation of finite groups with cyclic Sylow subgroups" (C- or Z-groups)  
-## by Heiko Dietrich and Darren Low (C) 2020
+## 
+##     by Heiko Dietrich and Darren Low (C) 2020
 ##
-## This code requires GAP 4.10.0 or newer.
+## Heiko Dietrich, School of Mathematics, Monash University, Australia
+## http://users.monash.edu/~heikod/
+## heiko.dietrich@monash.edu
+##
+## Darren Low, School of Mathematics, Monash University, Australia
+## dslow3@student.monash.edu 
+##
+##################################################
+##
+## This code requires GAP 4.10.0 or newer. It provides the functionality to construct and identify
+## C-groups (finite groups that have cyclic Sylow subgroups). 
 ##
 ## User functions:
 ##
@@ -14,7 +25,15 @@
 ##   IdCGroup(G)       : returns the id [n,i] of a C-group G, such that G is isomorphic to CGroupById(n,i)
 ##   AllCGroups(n)     : returns all C-groups of order n, up to isomorphism
 ##
-## Set the following to "false" if the code should not use the NC-version of GroupByRws
+## For each order n, there exist N=NumberOfCGroups(n) many isomorphism types of C-groups of order n. In our implementation
+## these N groups can be constructed by AllCGroups(n) or by CGroupById(n,i) where i in [1..N]. The ID of a C-group G of
+## order n is the unique i in [1..N] such that G is isomorphic to CGroupById(n,i).
+##
+##################################################
+##
+##
+## At the moment, groups are constructed as pc-groups using GroupByRwsNC; set the following to "false" if the code should 
+## not use the NC-version of GroupByRws
 ##
 
 USE_NC:=true;
@@ -25,7 +44,7 @@ USE_NC:=true;
 ##################################################################################################################################
 ##
 ##
-## name space record for local functions and attribute for ID
+## Internal functions are saved in the name space record cgrp_record 
 ##
 
 cgrp_record := rec();
