@@ -91,20 +91,20 @@ local W, V, k;
 	V := [];
 	W := [];
 	for k in L do Add(W, 0); od;
-    	while not W = L do 
-    		k := 1;
-        	Add(V, StructuralCopy(W));
-        	while k <= Length(L) do
-        		W[k] := W[k] + 1;
-            		if W[k] > L[k] then
-            			W[k] := 0;
-                		k := k + 1;
-            		else
-                		k := Length(L) + 1;
-            		fi;
-        	od;
-    	od;
-    	Add(V, W);
+    while not W = L do 
+    	k := 1;
+       	Add(V, StructuralCopy(W));
+       	while k <= Length(L) do
+			W[k] := W[k] + 1;
+           	if W[k] > L[k] then
+           		W[k] := 0;
+              		k := k + 1;
+           	else
+              		k := Length(L) + 1;
+           	fi;
+       	od;
+    od;
+    Add(V, W);
     
     return V;    
 end;
