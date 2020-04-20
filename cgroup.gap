@@ -82,41 +82,38 @@ local facs, syl, hom, Gs;
 
 
 ########################################################################################
-# takes in a list of numbers L
-# returns the tuples of things
-# where each tuple W has W[i] <= L[i] 
-# NZ version doesn't have 0
+# INPUT: a list of positive numbers L
+# OUTPUT: the set of all tuples W such that 0 <= W[i] <= L[i] for each i
 ########################################################################################
 cgrp_record.zTuples := function(L)
 local W, V, k;
 
 	V := [];
 	W := [];
-    for k in L do Add(W, 0); od;
-    while not W = L do 
-    	k := 1;
-        Add(V, StructuralCopy(W));
-        while k <= Length(L) do
-        	W[k] := W[k] + 1;
-            if W[k] > L[k] then
-            	W[k] := 0;
-                k := k + 1;
-            else
-                k := Length(L) + 1;
-            fi;
-        od;
-    od;
-    Add(V, W);
+	for k in L do Add(W, 0); od;
+    	while not W = L do 
+    		k := 1;
+        	Add(V, StructuralCopy(W));
+        	while k <= Length(L) do
+        		W[k] := W[k] + 1;
+            		if W[k] > L[k] then
+            			W[k] := 0;
+                		k := k + 1;
+            		else
+                		k := Length(L) + 1;
+            		fi;
+        	od;
+    	od;
+    	Add(V, W);
     
     return V;    
 end;
 
 
+
 ########################################################################################
-# takes in a list of numbers L
-# returns the tuples of things
-# where each tuple W has W[i] <= L[i] 
-# NZ version doesn't have 0
+# INPUT: a list of positive numbers L
+# OUTPUT: the set of all tuples W such that 1 <= W[i] <= L[i] for each i
 ########################################################################################
 cgrp_record.zTuplesNZ := function(L)
 local W, V, k;
@@ -143,7 +140,9 @@ local W, V, k;
 end;
 
 ###################################################################################
-# get possible acting group orders
+# INPUT: two integers n and d where d|n and gcd(d, n/d)=1
+# OUTPUT: All possible acting group orders arranged in increasing order
+#	  for a group of order n and acting divisor d
 ###################################################################################
 cgrp_record.getOrders := function(n, d)
 local e, P, Q, expo, p, q, guac, max, M;
@@ -165,20 +164,24 @@ local e, P, Q, expo, p, q, guac, max, M;
     M := List(cgrp_record.zTuplesNZ(expo), m-> Product([1..Length(m)], x-> P[x][1]^m[x]));
     Sort(M);
 
-return M;
+	return M;
 end;
 
 
 ###################################################################################
-# cluster function
+# INPUT: 3 integers n, d, m where d|n, gcd(n,n/d)=1, and m|d with both having the
+#	 same number of distinct prime factors
+# OUTPUT: the set of all clusters corresponding to groups of order n
+# 	  with acting divisor d and acting group of size m
 ###################################################################################
 cgrp_record.getClusters := function(n, d, m)
-local P, Q, Qfacs, expo, act, ip, Pacts, maxPacts, q, qfac, res, epos, ie, front, back, f, b, tmp, sizes, comb,p,e;
+local P, Q, Qfacs, expo, act, ip, Pacts, maxPacts, q, qfac, res, epos, ie, front, back, f, b, tmp, sizes, comb, p, e;
 
-    #####
-	# Now we determine the clusters corresponding to the acting group order m
-	# We note which primes can be acted on, and the maximal exponent which can occur
-	#####
+    ###########################
+	# We need clusters such that prime p=P[ip][1] acts with exponent e=expo[ip] at least once
+	# Pacts contains the primes on which p can act 
+	# maxPacts[i] is the highest exponent with which p can act on Pacts[i]
+	###########################
     P := Collected(FactorsInt(d));
     Q := Collected(FactorsInt(n/d));
     Qfacs := List(Q, q-> rec(prime:=q, facs:=Collected(FactorsInt(q[1]-1))));
@@ -198,14 +201,12 @@ local P, Q, Qfacs, expo, act, ip, Pacts, maxPacts, q, qfac, res, epos, ie, front
         od; od;
         res := [];
         
-        ######
+        #################
 		# epos has the possible positions which p can act maximally with exponent e
-		# we sort this by fixing the first position that has entry e
-		# then populating entries before that lexicographically with values between 0
-		# and min(entry,e-1)
-		# and then those after lexicographically with values between 
-		# 0 and min(entry,e) using zTuples
-		#####
+		# We sort this by fixing the first position that has entry e, then populating
+		# entries before that lexicographically with values between 0 and min(entry,e-1)
+		# and those after lexicographically with values between 0 and min(entry,e) 
+		#################
         epos := Filtered([1..Length(Pacts)], x-> maxPacts[x]=e);
         for ie in epos do
             front := cgrp_record.zTuples(List(maxPacts{[1..ie-1]}, x-> Minimum(x,e-1)));
@@ -219,12 +220,12 @@ local P, Q, Qfacs, expo, act, ip, Pacts, maxPacts, q, qfac, res, epos, ie, front
         Add(act, res);
     od;
     
-    #########
-	# for each acting prime, we get the collection of 
-	# all sets of primes and exponents it can act on
-	# a cluster is formed by choosing one such set for each acting prime
-	# we take all possible combinations
-	#########
+    ##################
+	# act[i] contains all possible valid combinations how P[i] can act 
+	# here act[i] is a list of actions [ [P[i], q1, e1], .., [P[i], q_k, e_k] ]
+	# meaning that here P[i] acts on q_y with exponent e_y
+	# for the cluster, we have to take all the possible combinations, one from each act[i]
+	##################
     sizes := List(act,Size);
     comb := cgrp_record.zTuplesNZ(sizes);
     
@@ -242,7 +243,8 @@ end;
 
 
 ########################################################################################
-# Murty Cd function; counts number of order n with acting divisor d
+# Murty Cd function; counts number of C-groups of order n with acting divisor d
+# Note: n and n/d must be coprime
 ########################################################################################
 cgrp_record.Cd := function(n, d)
 local p, e, product, j, sum;
@@ -268,7 +270,7 @@ end;
 
 
 ###################################################################################
-# Murty Cdm; function counts number of order n with acting divisor d and acting group order m
+# Murty Cdm function; counts number of C-groups of order n with acting divisor d and acting group of size m
 ###################################################################################
 cgrp_record.Cdm := function(n, d, m)
 local p, e, product, tmp;
@@ -289,7 +291,7 @@ end;
 
 
 #########################################################################################
-# ClusterCount counts number of groups in cluster c
+# ClusterCount counts number of groups in a cluster c
 #########################################################################################
 cgrp_record.ClusterCount := function(c)
 local current, total, max, t;
@@ -321,10 +323,9 @@ end;
 NumberOfCGroups := function(n)
 local d, N, D, sum;
 	
-	######
-	# take only primes that can possibly act
-	# and then product their max powers together
-	######
+	####################
+	# Get a list containing all possible acting divisors and apply the Cd function 
+	####################
 	N := Collected(FactorsInt(n));
 	D := List(Combinations(Filtered(N{[1..Length(N-1)]}, p-> ForAny(N{[2..Length(N)]}, q-> not Gcd(q[1]-1,p[1])=1))), w-> Product(List(w, x-> x[1]^x[2])));
 	sum := 0;
@@ -338,7 +339,7 @@ end;
 
 
 #############################################################################################
-# Fast exponentiation, b = base, e = exponent, m = modulus
+# Fast exponentiation: b = base, e = exponent, m = modulus
 #############################################################################################
 cgrp_record.FastExponentiation := function(b,e,m)
 local s;
@@ -361,27 +362,24 @@ end;
 #
 ###########################################################################################
 CGroupById := function(n, id)
-local N, D, sum, i, j, k, d, M, e, guac, max, p, ip, q, P, Q,  myid,expo, m, res, tmp, act,
-clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, padic, G;
+local N, D, d, M, m, expo, e, sum, i, j, k, max, p, ip, q, iq, P, Q, myid, Qprime, act, clusters, coll, orders, gens, C, c, orb, current, padic, F, G, res, tmp;
 
-
-        if not (IsInt(n) and n>0) or not (IsInt(id) and id>0) then
-	   Error("wrong input");
+	if not (IsInt(n) and n>0) or not (IsInt(id) and id>0) then
+		Error("wrong input");
 	elif id > NumberOfCGroups(n) then
-	   Error("There are only ",NumberOfCGroups(n), " many C-groups of order ",n);
+	   	Error("There are only ",NumberOfCGroups(n), " many C-groups of order ",n);
 	fi;
 
-        myid := [n,id];
+    myid := [n,id];
 
-	tstart := Runtime();
-	#####
-	# Deal with the cases in which there is only 1 group
-	#####
+	##########
+	# First deal with the cases in which there is only 1 group or id=1
+	##########
 	if n = 1 then 
-           G:=GroupByRws(SingleCollector(FreeGroup(0:FreeGroupFamilyType:="syllable"), 1));
-	   Setcgroup_id(G,myid);
-	   return G;
-       fi; 
+		G:=GroupByRws(SingleCollector(FreeGroup(0:FreeGroupFamilyType:="syllable"), 1));
+	   	Setcgroup_id(G,myid);
+	   	return G;
+    fi; 
 	N := Collected(FactorsInt(n));
 	if Length(N)=1 or Gcd(n,Phi(n))=1 or id=1 then
         orders := [];
@@ -406,41 +404,35 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
             i := i + k;
             j := j + 1;
         od;
-        if not id=1 then
-            Print("Hold up, there's only 1 Z-group of order ",n,"!\n");
-        fi;
         if USE_NC then
-	    G:=GroupByRwsNC(coll);
-	else
-	   G:=GroupByRws(coll);
+	    	G:=GroupByRwsNC(coll);
+		else
+	   		G:=GroupByRws(coll);
         fi;
-	Setcgroup_id(G,myid);
-	return G;
+		Setcgroup_id(G,myid);
+		
+		return G;
     fi;
 	
-	#####
-	# First we determine the acting divisor
-	# Start from sum=1 and d\neq 1 because we know it's not cyclic
-	#####
+	##############
+	# First we determine the acting divisor d
+	# Start from sum=1 and d\neq 1 because id > 1
+	##############
 	D := List(Combinations(Filtered(N{[1..Length(N-1)]}, p-> ForAny(N{[2..Length(N)]}, q-> not Gcd(q[1]-1,p[1])=1))), w-> Product(List(w, x-> x[1]^x[2])));
 	Sort(D);
 	sum := 1;
 	i := 1;
 	while sum < id do 
 		i := i + 1;
-		if i > Length(D) then Error("id too large\n"); fi;
-		if not Gcd(D[i],n/D[i])=1 then continue; fi;
 		tmp := cgrp_record.Cd(n, D[i]);
 		sum := sum + tmp;
 	od;
 	d := D[i];
 	id := tmp - sum + id;
-	#Print("took ",Runtime() - ttt," to find acting divisor\n");
-	#ttt := Runtime();
 	
-	####
-	# Next we determine the acting group order
-	####
+	############
+	# Next we determine m, the size of the acting group
+	############
 	M := cgrp_record.getOrders(n, d);
 	sum := 0;
 	i := 0;
@@ -451,14 +443,12 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
 	od;
 	m := M[i];
 	id := tmp - sum + id;
-	#Print("took ",Runtime() - ttt," to find acting group order\n");
-	#ttt := Runtime();
-	clusters := cgrp_record.getClusters(n,d,m);
 	
-	#####
-	# finding which cluster and the position within it
-	# we subtract 1 from the position to help with conversion to mixed base later
-	#####
+	###############
+	# Finally we determine which cluster the group lies in
+	# id ends up being the position of the group within the cluster minus 1
+	###############
+	clusters := cgrp_record.getClusters(n,d,m);
 	sum := 0;
 	i := 0;
 	while sum < id do 
@@ -468,15 +458,14 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
 	od;
 	C := clusters[i];
 	id := tmp - sum + id - 1;
-	#Print("took ",Runtime() - ttt," to find cluster\n");
-	#ttt := Runtime();
-	
-	#######
-	# finally we build yay
-	# here we get the prime orders and also
-	# record for each prime factor: the position of the generator in the collector of that order
-	# we arrange the primes such that acting primes come first, then acted on primes, then the central ones. 
-	#######
+
+	########################
+	# Starting the construction process
+	# Arrange the primes by: primes which act, then primes which are acted on,
+	# 						 and lastly which do neither.
+	# Record for each prime factor: the position of the generator in the collector having that order
+	# P contains acting primes and Q the acted upon primes
+	########################
 	tmp := [];
 	res := [];
 	Q := Collected(FactorsInt(n/d));
@@ -505,13 +494,13 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
         k := k + q[2];
     od;
     
-    #####
-    # setting relative orders
-    #####
+    ############
+    # Setting relative orders
+    ############
 	F := FreeGroup(Length(orders):FreeGroupFamilyType:="syllable");
 	gens := GeneratorsOfGroup(F);
 	coll := SingleCollector(F, orders);
-    i := 1;
+    	i := 1;
 	j := 1;
 	while i <= Length(P) do
 		k := 1;
@@ -533,19 +522,16 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
 		j := j + k;
 	od;
 	
-    #####
-    # adding the conjugation exponents
-    # orb is the number of possible orbits
-    # ip(iq) is the position of current acting(acted on) prime in P(Q)
-    # k corresponds to the k-th possible action of p on q with exponent exp
-    #####
+  	#################
+    # for each triplet, orb is the number of different actions, different being that,
+	# choosing a different action here, while keeping all others the same,
+	# produces a non-isomorphic group.
+	# k corresponds to the k-th possible action of p on q with exponent exp
+    # ip/ip is the position of current acting/acted-on prime in P/Q
+    #################
     Qprime := List(Q, x-> x[1]);
     current := 0;
     ip := 0;
-    #Print(orders, " are our orders\n");
-    #Print(C, " is our cluster\n");
-    #Print(P, " is our P\n");
-    #Print(Q, " is our Q\n");
     for c in C do
         if not c[1] = current then
             current := c[1];
@@ -565,16 +551,18 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
         k := RemInt(id, orb) + 1;
         id := QuoInt(id, orb);
         
-        #####
+        ##########
         # This loop here is to skip over actions which are of the wrong exponent
-        #####
+        ##########
         for tmp in [1..QuoInt(k, c[1])] do
             k := k + 1;
             if not Gcd(k, c[1]) = 1 then k := k + 1; fi;
         od;
         
+		###############
+		# Setting the conjugation actions
+		###############
         for i in [1..c[3]] do for j in [1..Q[iq][2]] do
-            #Print(i," is our i, ",j," is our j\n");
             tmp := cgrp_record.FastExponentiation(PrimitiveRootMod(q),k*Phi(q)/(c[1]^(1+c[3]-i)), c[2]^(Q[iq][2]+1-j));
             padic := [RemInt(tmp, c[2])];
             tmp := QuoInt(tmp, c[2]);
@@ -587,11 +575,12 @@ clusters, coll, orders, F, gens, C, c, orb, iq, Qprime, current, ttt, tstart, pa
         od; od;
     od;
    if USE_NC then
-      G:=GroupByRwsNC(coll);
+   		G:=GroupByRwsNC(coll);
    else
-      G:=GroupByRws(coll);
+      	G:=GroupByRws(coll);
    fi;
    Setcgroup_id(G,myid);
+   
    return G;
 end;
 
@@ -599,18 +588,13 @@ end;
 
 
 ####################################################################################################
+#
 # Identification function
-# For a C-Group G, return its Id
+# For a C-Group G, return its order and Id: [n, id]
 #
-#
-# "cluster" will contain triplets of prime actions
-# "orb" is the number of non isomorphic actions
-# "pos" has position of which action takes place 
-# "Pot" has positions of primes which could potentially act, i.e. there is a q-1 not coprime;
-# "D" has the positions of primes which do act
 ####################################################################################################
 IdCGroup := function(G)
-local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r, s, norm, gens, pos, i, P, Q, d, m, D, M, expo, current, cpos, act , res, tmp, clusters, Pot, c, flag2, flag, ig, ttt, oldmax, next;
+local id, n, N, gens, ip, iq, p, q, pup, qup, P, Q, i, k, d, m, D, M, Pot, expo, e, x, y, cluster, orb, max, oldmax, r, s, norm, first, next, pos, cpos, clusters, c, current, res, tmp;
 
 
     if Hascgroup_id(G) then return cgroup_id(G); fi;
@@ -619,8 +603,7 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
        Setcgroup_id(G,res);
        return res;
     fi;
-    
-    ttt := Runtime();
+   
     n := Size(G);
     N := Collected(FactorsInt(n));
     gens := [];
@@ -629,7 +612,16 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
         if not Size(tmp) = 1 then Error("Input is not a C-group!\n"); fi;
         Add(gens, tmp[1]);
     od;
-    #Print(Runtime()-ttt, " to get gens\n"); 
+    
+	###################
+	# cluster: will contain triplets corresponding to prime actions that occur in G.
+	# Considering C-groups with order n and same clusters as G, orb[i]: is the number of non isomorphic actions 
+	#	corresponding to cluster[i], in the sense that fixing all the other actions in other cluster[j]
+	# 	but varying cluster[i] gives rise to non-isomorphic groups.
+	# pos[i]: has position of the action corresponding to cluster[i] that occurs in G.
+	# Pot: has positions of primes which could potentially act, i.e. primes p|N such that there is a prime q|N with p|q-1.
+	# D: has the positions of primes which do in fact act in G.
+	####################
     cluster := [];
     orb := [];
     pos := [];
@@ -642,50 +634,40 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
             if Gcd(N[ip][1], N[iq][1]-1) = 1 then continue; fi;
             if first = 1 then Add(Pot, ip); first := 2; fi;
             y := gens[iq];
-            ####
-            # if p acts on q
-            ####
+			
+            ####################
+            # if p acts on q in G, then we first determine the exponent e of the action
+			# then add the triplet [p,q,e] to cluster
+            ####################
             if not y^x = y then
-                #Print("we found a non-trivial action\n");ttt:=Runtime();
                 p := N[ip][1];
                 q := N[iq][1];
                 e := 1;
-                ####
-                # we determine the exponent
-                ####
                 while not y^(x^(p^e)) = y do e := e+1; od;
-                #Print(Runtime()-ttt, " to get the exp of the action\n");
                 Add(cluster, [p,q,e]);
                 pup := p^e;
                 qup := q^N[iq][2];
                 r := PrimitiveRootMod(qup);
                 s := Phi(qup)/pup;
                 
-                ####
-                # "normalise" the acting generator if first time
-                # otherwise, count number of orbits and check which action occurs,
-                # adding the counter for that action to "pos"
-                ####
+                #################################
+				# The first time a prime acts, all actions are isomorphic and we "normalise" the generator
+				# to get one which gives the first canonical action. If the prime doesn't act with maximal
+				# exponent, then there are several choices and we note that, to cycle through them later.
+                #################################
                 if first = 2 then
-                    ttt:=Runtime();
                     first := 0;
-                    Add(D, ip);
-                    max := e;
-                    Add(orb, 1);
-                    Add(pos, 1);
                     norm := 1;
                     while not y^(x^norm) = y^(cgrp_record.FastExponentiation(r, s, qup)) do
                         norm := norm + 1;
-                        #Print(norm, " norm up!\n");
                     od;
                     x := x^norm;
                     gens[ip] := x;
-                    #Print("this is the first: e is ",e," out of ",N[ip][2],"\n");
-                    #Print(Runtime()-ttt, " to normalise gen\n");
-                    #Print(gens[ip], " all my gens\n");
+					max := e;
+                    Add(D, ip);
+                    Add(orb, 1);
+                    Add(pos, 1);
                 else
-                    #Print("next action!\n");
-                    flag2 := 0;
                     if e > max then
                         Add(orb, Phi(p^max));
                         oldmax := max;
@@ -694,10 +676,13 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
                         Add(orb, Phi(p^e));
                     fi;
                     tmp := [];
-                    ttt := Runtime();
                     i := 1;
                     k := 1;
                     next := 1;
+					################
+					# Cycle through the possible actions to check which one the generator x induces. 
+					# If it is none of those, then we cycle x to the next generator that preserves all previous actions.
+					################
                     while not y^x = y^(cgrp_record.FastExponentiation(r, k*s, qup)) do
                         i := i+1;
                         k := k+1;
@@ -705,16 +690,14 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
                             k := k+1;
                         fi;
                         if i > orb[Length(orb)] then
-                            #Print(x, " going up\n");
                             i := 1;
                             k := 1;
                             x := gens[ip]^((next*p^oldmax)+1);
                             next := next+1;
                         fi;
                     od;
-		    gens[ip] := x; ##new!
+		    		gens[ip] := x; ##new!
                     Add(pos,i);
-                    #Print(Runtime() - ttt, " to find the right canonical action\n");
                 fi;
             fi;
         od;
@@ -724,14 +707,10 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
        Setcgroup_id(G,res);
        return res;
     fi;
-    #Print("position vector is ",pos," out of ");
-    #Print(orb,"\n");
     
-    ######
-    # here we convert the position vector into the actual
-    # numerical position within the cluster.
-    ######
-    ttt := Runtime();
+    ###############
+    # Converting the position vector "pos" into the actual numerical position within the cluster
+    ###############
     cpos := 0;
     for i in [1..Length(pos)] do
         k := 1 + Length(pos) - i;
@@ -740,11 +719,9 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
         fi;
     od;
     cpos := cpos + pos[1];
-    #Print(Runtime()-ttt," to get cluster pos\n");ttt:=Runtime();
-    #Print(cpos," is my cluster position\n");
     
     #############
-    # we find the acting divisor using Murty's Cd formula
+    # Use Murty's Cd formula to find the acting divisor d
     #############
     d := Product(D, x-> N[x][1]^N[x][2]);
     Pot := List(Combinations(Pot), x-> Product(N{x}, y-> y[1]^y[2]));
@@ -755,14 +732,10 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
         id := id + cgrp_record.Cd(n, Pot[i]);
         i := i + 1;
     od;
-    #Print(Runtime()-ttt," to get acting div\n");ttt:=Runtime();
-    #Print(d, " is my acting divisor\n");
-    #Print(Pot , " are all possible acting divisors\n");
-    #Print(id, " is how many in previous divisors\n");
     
-    #########
-    # now for acting group order using Murty's Cdm formula
-    #########
+    #############
+    # Use Murty's Cdm formula to find the size m of the acting group 
+    #############
     current := 0;
     max := 0;
     m := 1;
@@ -778,49 +751,45 @@ local id, n, N, ip, iq, p, q, e, pup, qup, x, y, k, cluster, orb, first, max, r,
         fi;
     od;
     m := m*(current^max);
-	M := cgrp_record.getOrders(n, d);
-    
+	M := cgrp_record.getOrders(n, d); 
     i := 1;
 	while i < Position(M, m) do
         id := id + cgrp_record.Cdm(n, d, M[i]);
         i := i + 1;
     od;
-    #Print(m, " is my acting order\n");
-    #Print(M, " are all possible acting orders\n");
-    #Print(id , " is how many in previous acting groups \n");
-    #Print(Runtime()-ttt," to get acting order\n");ttt:=Runtime();
+	
     ##########
-    # finally construct clusters and find position of the cluster 
+    # finally construct all clusters corresponding to n,d,m and find position of the cluster belonging to G 
     ##########
 	clusters := cgrp_record.getClusters(n, d, m);
-	
 	i := 1;
 	while i < Position(clusters,cluster) do
         id := id + cgrp_record.ClusterCount(clusters[i]);
         i := i + 1;
     od;
-    #Print(Runtime()-ttt," to get cluster\n"); ttt:=Runtime();
-    #Print(cluster, " is my cluster in position ", Position(clusters,cluster), "\n");
-    #Print(clusters, " is all clusties\n"); 
-    #Print(id, " is how many in previous clusties\n");
-
-       res := [n,id+cpos];
-       Setcgroup_id(G,res);
-       return res;
+	
+    res := [n,id+cpos];
+    Setcgroup_id(G,res);
+	
+    return res;
 end;
 
 
 
 
 #################################################################################################
-# input: integer n, integer d such that d|n and gcd(n/d, d) = 1, and a cluster (triplets)
-# Builds all the groups of order n with acting divisor in the cluster
+# INPUT: integers n,d such that d|n and gcd(n/d, d) = 1, and a cluster (triplets).
+# OUTPUT: Builds all the groups of order n belonging to this cluster.
+# - called by the AllCGroups function
+# - same method as CGroupById
 #################################################################################################
 cgrp_record.zBuildCluster := function(n, d, C)
-local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , orb, L, i, j, coll, c, Qprime, current, padic, G;
-    
+local N, id, e, p, q, ip, iq, P, Q, Qprime, i, j, k, F, gens, orders, boll, coll, max, orb, c, current, padic, G, L, tmp, res;
 
     N := FactorsInt(n);
+	##########
+	# Deal with cyclic case separately
+	##########
     if d = 1 then
         N := Collected(N);
         orders := [];
@@ -845,10 +814,14 @@ local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , or
                 i := i + k;
                 j := j + 1;
             od;
-	G := GroupByRws(coll);
-	Setcgroup_id(G,[n,1]);
+		if USE_NC then G := GroupByRwsNC(coll); else G := GroupByRws(coll); fi;
+		Setcgroup_id(G,[n,1]);
         return [G];
     fi;
+	
+	####################
+	# Sorting prime divisors, and getting positions
+	####################
     e := n/d;
     tmp := [];
 	res := [];
@@ -861,9 +834,7 @@ local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , or
     od;
     Q := Concatenation(tmp, res);
     P := Collected(FactorsInt(d));
-    #####
-    # recording the position of each prime
-    #####
+
 	orders := [];
 	k := 1;
 	for p in P do
@@ -885,9 +856,9 @@ local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , or
         k := k + q[2];
     od;
 	
-	#####
-	# setting relative orders
-	#####
+	################
+	# Setting relative orders
+	################
 	F := FreeGroup(Length(orders):FreeGroupFamilyType:="syllable");
 	gens := GeneratorsOfGroup(F);
 	i := 1;
@@ -912,10 +883,13 @@ local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , or
         i := i + 1;
         j := j + k;
     od;
+	
+	#################
+	# repeat the construction process for each group in the cluster
+	#################
     L := [];
     Qprime := List(Q, x-> x[1]);
 	for id in [0..cgrp_record.ClusterCount(C)-1] do 
-        #Print("Building the position ",id+1," group in this clust\n");
         coll := StructuralCopy(boll);
         ip := 0;
         current := 0;
@@ -938,16 +912,15 @@ local N, e, Q, q, tmp, P, k, res, p, orders, boll, id, F, gens, ip, iq, max , or
             k := RemInt(id, orb) + 1;
             id := QuoInt(id, orb);
             
-            #####
+            ###########
             # This loop here is to skip over actions which are of the wrong exponent
-            #####
+            ###########
             for tmp in [1..QuoInt(k, c[1])] do
                 k := k + 1;
                 if not Gcd(k, c[1]) = 1 then k := k + 1; fi;
             od;
             
             for i in [1..c[3]] do for j in [1..Q[iq][2]] do
-                #Print(i," is our i, ",j," is our j\n");
                 tmp := cgrp_record.FastExponentiation(PrimitiveRootMod(q),k*Phi(q)/(c[1]^(1+c[3]-i)), c[2]^(Q[iq][2]+1-j));
                 padic := [RemInt(tmp, c[2])];
                 tmp := QuoInt(tmp, c[2]);
@@ -977,24 +950,22 @@ local L, D, N, d, m, M, C, clusters,i;
     
     if n = 1 then return [GroupByRws(SingleCollector(FreeGroup(0:FreeGroupFamilyType:="syllable"), 1))]; fi;
     N := Collected(FactorsInt(n));
-    L := cgrp_record.zBuildCluster(n,1, []);
+    L := cgrp_record.zBuildCluster(n,1,[]);
 	D := List(Combinations(Filtered(N{[1..Length(N-1)]}, p-> ForAny(N{[2..Length(N)]}, q-> not Gcd(q[1]-1,p[1])=1))), w-> Product(List(w, x-> x[1]^x[2])));
 	Sort(D);
 	Remove(D, 1);
-	#Print(D," is all divisors\n");
     for d in D do
         if cgrp_record.Cd(n,d) = 0 then continue; fi;
         M := cgrp_record.getOrders(n, d);  
-        #Print(M, " is all orders\n");
         for m in M do
             clusters := cgrp_record.getClusters(n, d, m);
             for C in clusters do
                 Append(L, cgrp_record.zBuildCluster(n, d, C)); 
-                #Print("appened\n");
             od;
         od;
     od;
     for i in [1..Size(L)] do Setcgroup_id(L[i],[n,i]); od;
+	
     return L;
 end;
 
