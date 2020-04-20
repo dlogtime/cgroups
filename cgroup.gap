@@ -91,22 +91,22 @@ local W, V, k;
 	V := [];
 	W := [];
 	for k in L do Add(W, 0); od;
-    while not W = L do 
-    	k := 1;
-       	Add(V, StructuralCopy(W));
-       	while k <= Length(L) do
+	while not W = L do 
+		k := 1;
+		Add(V, StructuralCopy(W));
+		while k <= Length(L) do
 			W[k] := W[k] + 1;
-           	if W[k] > L[k] then
-           		W[k] := 0;
-              		k := k + 1;
-           	else
-              		k := Length(L) + 1;
-           	fi;
-       	od;
-    od;
-    Add(V, W);
+			if W[k] > L[k] then
+				W[k] := 0;
+				k := k + 1;
+			else
+				k := Length(L) + 1;
+			fi;
+		od;
+	od;
+	Add(V, W);
     
-    return V;    
+	return V;    
 end;
 
 
@@ -574,14 +574,14 @@ local N, D, d, M, m, expo, e, sum, i, j, k, max, p, ip, q, iq, P, Q, myid, Qprim
             SetConjugateNC(coll, Q[iq][3]+j-1, P[ip][3]+i-1, res);
         od; od;
     od;
-   if USE_NC then
+	if USE_NC then
    		G:=GroupByRwsNC(coll);
-   else
-      	G:=GroupByRws(coll);
-   fi;
-   Setcgroup_id(G,myid);
+	else
+		G:=GroupByRws(coll);
+	fi;
+	Setcgroup_id(G,myid);
    
-   return G;
+	return G;
 end;
 
 
