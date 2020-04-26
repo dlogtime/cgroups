@@ -10,7 +10,7 @@
 ## heiko.dietrich@monash.edu
 ##
 ## Darren Low, School of Mathematics, Monash University, Australia
-## dslow3@student.monash.edu 
+## darrenlow@protonmail.com 
 ##
 ##################################################
 ##
@@ -25,9 +25,11 @@
 ##   IdCGroup(G)       : returns the id [n,i] of a C-group G, such that G is isomorphic to CGroupById(n,i)
 ##   AllCGroups(n)     : returns all C-groups of order n, up to isomorphism
 ##
-## For each order n, there exist N=NumberOfCGroups(n) many isomorphism types of C-groups of order n. In our implementation
-## these N groups can be constructed by AllCGroups(n) or by CGroupById(n,i) where i in [1..N]. The ID of a C-group G of
-## order n is the unique i in [1..N] such that G is isomorphic to CGroupById(n,i).
+## For each order n, there exist N=NumberOfCGroups(n) many isomorphism types of C-groups of order n. 
+## In our implementation these N groups can be constructed by AllCGroups(n) or by CGroupById(n,i) where i in [1..N]. 
+## The ID of a C-group G of order n is the unique i in [1..N] such that G is isomorphic to CGroupById(n,i).
+## Note: groups constructed with CGroupById or AllCGroups have their ID stored as an attribute 
+##       and IdCGroup will simply retrieve this attribute
 ##
 ##################################################
 ##
